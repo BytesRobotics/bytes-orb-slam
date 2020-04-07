@@ -1,0 +1,6 @@
+[submodule "ThirdParty/DBow3"]
+	path = ThirdParty/DBow3
+	url = https://github.com/BytesRobotics/DBow3.git
+[submodule "ThirdParty/g2o"]
+	path = ThirdParty/g2o
+	url = https://github.com/BytesRobotics/g2o.git
