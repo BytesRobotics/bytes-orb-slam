@@ -12,83 +12,40 @@ Frame::Frame(int max_features) {
 }
 
 void Frame::draw_frame(cv::Mat &img_left, cv::Mat &img_right) {
+
+    /// Initialize the bgr image variables for creating the debug views
     cv::Mat bgr_left_distances;
     cv::cvtColor(img_left, bgr_left_distances, cv::COLOR_GRAY2BGR);
+
+    cv::Mat disparity_image;
+    bgr_left_distances.copyTo(disparity_image);
 
     cv::Mat bgr_right_distances;
     cv::cvtColor(img_right, bgr_right_distances, cv::COLOR_GRAY2BGR);
 
-    cv::Mat bgr_left_disparity;
-    bgr_left_distances.copyTo(bgr_left_disparity);
-
-    cv::Mat bgr_right_disparity;
-    bgr_right_distances.copyTo(bgr_right_disparity);
-
-
-    //Normalize distances to 0.0-1.0 and multiple by 255 to show how closely related the points are for visualization
-    if(relative){
-        double distance_min = 99999;
-        double distance_max = 0;
-        double distance_mean = 0;
-        for(auto & distance : distances){
-            if(distance > distance_max){
-                distance_max = distance;
-            }
-            if(distance  < distance_min){
-                distance_min = distance;
-            }
-            distance_mean += distance;
-        }
-        distance_mean /= distances.size();
-        std::cout << "Max dist: " << distance_max << " Min dist: " << distance_min << " Mean dist: " << distance_mean << std::endl;
-        for(int i=0; i<distances.size();i++){
-            auto norm_dist = ((distances[i] - distance_min)/(distance_max-distance_min))*255;
-            cv::circle(bgr_left_distances, matches[i][0].pt, 3, cv::Scalar(0, 255 - norm_dist, norm_dist));
-            cv::circle(bgr_right_distances, matches[i][1].pt, 3, cv::Scalar(0, 255 - norm_dist, norm_dist));
-        }
-    } else {
-        for(int i=0; i<matches.size(); i++){
-            cv::circle(bgr_left_distances, matches[i][0].pt, 3, cv::Scalar(0, 255 - distances[i], distances[i]));
-            cv::circle(bgr_right_distances, matches[i][1].pt, 3, cv::Scalar(0, 255 - distances[i], distances[i]));
-        }
-    }
-
+    /// Merge the left and right images together to get combined debug view
     cv::Mat distance_image;
     cv::hconcat(bgr_left_distances, bgr_right_distances, distance_image);
 
-    cv::imshow("Distances", distance_image);
-    cv::waitKey(1);
-
-    //Normalize disparities to 0.0-1.0 and multiple by 255 to show how closely related the points are for visualization
-    if(relative){
-        double disparity_min = 99999;
-        double disparity_max = 0;
-        double mean_disp = 0;
-        for(auto & disparity : disparities){
-            if(disparity > disparity_max){
-                disparity_max = disparity;
-            }
-            if(disparity  < disparity_min){
-                disparity_min = disparity;
-            }
-            mean_disp += disparity;
-        }
-        mean_disp/=disparities.size();
-        std::cout << "Max disp: " << disparity_max << " Min disp: " << disparity_min << " Mean disp: " << mean_disp << std::endl;
-        for(int i=0; i<disparities.size();i++){
-            auto norm_disp = ((disparities[i] - disparity_min)/(disparity_max-disparity_min))*255;
-            cv::circle(bgr_left_disparity, matches[i][0].pt, 3, cv::Scalar(norm_disp, 0, 255 - norm_disp));
-            cv::circle(bgr_right_disparity, matches[i][1].pt, 3, cv::Scalar(norm_disp, 0, 255 - norm_disp));
-        }
-    } else {
-        for(int i=0; i<matches.size(); i++){
-            cv::circle(bgr_left_disparity, matches[i][0].pt, 3, cv::Scalar(disparities[i]*10, 0, 255-disparities[i]*10));
-            cv::circle(bgr_right_disparity, matches[i][1].pt, 3, cv::Scalar(disparities[i]*10, 0, 255-disparities[i]*10));
-        }
+    /// Draw the matches and use color to indicate confidence in match
+    for(unsigned int i=0; i<match_features.size(); i++){
+        // left image
+        cv::circle(distance_image, match_features[i][0].pt, 3, cv::Scalar(0, 255 - match_distances[i], match_distances[i]));
+        // right image
+        cv::Point2f right_point = match_features[i][1].pt;
+        right_point.x += img_left.size().width; // shift the point since we shifted the image
+        cv::circle(distance_image, right_point, 3, cv::Scalar(0, 255 - match_distances[i], match_distances[i]));
+        //line connecting match
+        cv::line(distance_image, match_features[i][0].pt, right_point, cv::Scalar(0, 255 - match_distances[i], match_distances[i]));
     }
 
-    cv::Mat disparity_image;
-    cv::hconcat(bgr_left_disparity, bgr_right_disparity, disparity_image);
+    cv::imshow("Matches", distance_image);
+    cv::waitKey(1);
+
+
+    for(unsigned int i=0; i<match_features.size(); i++){
+        cv::circle(disparity_image, match_features[i][0].pt, 3, cv::Scalar(match_xyz[i].z*20, 0, 255 - match_xyz[i].z*20));
+    }
 
     cv::imshow("Disparities", disparity_image);
     cv::waitKey(1);

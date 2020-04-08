@@ -9,15 +9,19 @@
 // Standard C++
 #include <chrono>
 #include <thread>
+#include <iostream>
 
 // ROS2
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_components/register_node_macro.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
+#include <image_geometry/stereo_camera_model.h>
 
 // OpenCV
 #include <opencv2/core/core.hpp>
 #include <opencv2/opencv.hpp>
 #include <opencv2/features2d.hpp>
+#include <opencv2/core/cvstd.hpp>
 
 // Other
 #include "Frame.h"
@@ -82,7 +86,7 @@ public:
      */
     ORBExtractor(std::shared_ptr<rclcpp::Node> node, int nfeatures=1000, float scaleFactor=1.5f, int nlevels=5, int edgeThreshold=19, int firstLevel=0,
                     int WTA_K=2, cv::ORB::ScoreType scoreType=cv::ORB::FAST_SCORE, int patchSize=19, int fastThreshold=30, bool debug=false,
-                    int tolerance=0, int matchThreshold=200);
+                    float tolerance=1, int matchThreshold=30);
 
 /**
      * This is the main function to be called for converting two grayscale images into
@@ -91,11 +95,11 @@ public:
      * @param imLeft Left grayscale image
      * @param imRight Right grayscale image
      */
-    std::shared_ptr<Frame> extract(const cv::Mat &img_left, const cv::Mat &img_right);
+    std::shared_ptr<Frame> extract(const cv::Mat &img_left, const cv::Mat &img_right, image_geometry::StereoCameraModel& stereo_camera_model);
 
 private:
     /// For this ORB extractor we use the default Opencv cv::ORB algorithm (Eventually implement cv::cuda::ORB)
-    std::unique_ptr<cv::ORB> orb_;
+    cv::Ptr<cv::ORB> orb_;
 
     /// Allow for important ORB related parameters to be dynamically configured
     rclcpp::AsyncParametersClient::SharedPtr parameters_client_;
@@ -126,9 +130,16 @@ private:
      * @param frame The frame that stores all the match information can be used for tracking the motion of the camera
      * @param threshold The match threshold to determine if the point is close enough to the one in the other image
      **/
-    void find_relevant_features_(std::shared_ptr<Frame> frame);
+    void find_relevant_features_(const std::shared_ptr<Frame>& frame);
 
-    void compute_disparity_();
+    void compute_xyz_(const std::shared_ptr<Frame>& frame, image_geometry::StereoCameraModel& stereo_camera_model);
+
+    /// Variables for monitoring the time of each step in the ORB extractor
+    std::chrono::steady_clock::time_point orb_start_, orb_stop_, match_start_, match_stop_, xyz_start_, xyz_stop_;
+    double aggregate_total_time_;
+    int iterations_;
+
+
 
 };
 
