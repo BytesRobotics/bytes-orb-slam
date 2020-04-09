@@ -39,6 +39,8 @@ void Frame::draw_frame(cv::Mat &img_left, cv::Mat &img_right) {
         cv::line(distance_image, match_features[i][0].pt, right_point, cv::Scalar(0, 255 - match_distances[i], match_distances[i]));
     }
 
+    cv::resize(distance_image, distance_image, cv::Size(), 2, 2, cv::INTER_CUBIC);
+
     cv::imshow("Matches", distance_image);
     cv::waitKey(1);
 
@@ -46,6 +48,8 @@ void Frame::draw_frame(cv::Mat &img_left, cv::Mat &img_right) {
     for(unsigned int i=0; i<match_features.size(); i++){
         cv::circle(disparity_image, match_features[i][0].pt, 3, cv::Scalar(match_xyz[i].z*20, 0, 255 - match_xyz[i].z*20));
     }
+
+    cv::resize(disparity_image, disparity_image, cv::Size(), 2, 2, cv::INTER_CUBIC);
 
     cv::imshow("Disparities", disparity_image);
     cv::waitKey(1);
