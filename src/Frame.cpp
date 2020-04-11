@@ -61,3 +61,15 @@ void Frame::shrink_frame() {
     match_distances.shrink_to_fit();
     match_xyz.shrink_to_fit();
 }
+
+std::shared_ptr<std::vector<cv::Point3d>> Frame::transform_keypoints(const std::shared_ptr<Frame> &transforming_frame) {
+    std::shared_ptr<std::vector<cv::Point3d>> transformed_points;
+    transformed_points->reserve(match_xyz.size());
+    for(const auto& point : match_xyz){
+//        tf2::Quaternion d_orientation =  transforming_frame->imu_orientation*imu_orientation.inverse(); // Get the change in the rotation between the frames
+        tf2::Transform d_transform = transforming_frame->wheel_odom*wheel_odom.inverse(); // Change in rotation/translation according to wheel odom
+        auto new_point = d_transform*tf2::tf2Vector4(point.x, point.y, point.z, 1); // temporarily storing the var in tf2::transform
+        transformed_points->push_back(cv::Point3d(new_point.x(), new_point.y(), new_point.z()));
+    }
+    return transformed_points;
+}
