@@ -16,6 +16,9 @@
 #include <rclcpp_components/register_node_macro.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
 #include <image_geometry/stereo_camera_model.h>
+#include <sensor_msgs/msg/point_cloud2.hpp>
+#include <sensor_msgs/msg/point_field.hpp>
+
 
 // OpenCV
 #include <opencv2/core/core.hpp>
@@ -138,6 +141,9 @@ private:
     std::chrono::steady_clock::time_point orb_start_, orb_stop_, match_start_, match_stop_, xyz_start_, xyz_stop_;
     double aggregate_total_time_;
     int iterations_;
+
+    /// We can publish a point cloud for visualization in RVIZ during debug mode with this publisher
+    rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr point_cloud_pub_;
 
 
 

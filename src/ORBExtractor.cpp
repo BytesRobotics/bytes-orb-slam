@@ -22,7 +22,7 @@ ORBExtractor::ORBExtractor(std::shared_ptr<rclcpp::Node>  node, int nfeatures, f
     node_->declare_parameter(node_->get_sub_namespace() + ".nlevels", nlevels);
     n_levels_ = nlevels;
     node_->declare_parameter(node_->get_sub_namespace() + ".edgeThreshold", edgeThreshold);
-    edge_threshold_ = edge_threshold_;
+    edge_threshold_ = edgeThreshold;
     node_->declare_parameter(node_->get_sub_namespace() + ".firstLevel", firstLevel);
     first_level_ = firstLevel;
     node_->declare_parameter(node_->get_sub_namespace() + ".WTA_K", WTA_K);
@@ -39,6 +39,8 @@ ORBExtractor::ORBExtractor(std::shared_ptr<rclcpp::Node>  node, int nfeatures, f
     match_tolerance_ = tolerance;
     node_->declare_parameter(node_->get_sub_namespace() + ".matchThreshold", matchThreshold); //Stereo threshold for image matching
     match_threshold_ = matchThreshold;
+
+    point_cloud_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("orb/pc", 1);
 
     orb_ = cv::ORB::create(n_features_, scale_factor_, n_levels_, edge_threshold_, first_level_, WTA_K_, score_type_, patch_size_, fast_threshold_);
 
@@ -133,6 +135,49 @@ std::shared_ptr<Frame> ORBExtractor::extract(const cv::Mat &img_left, const cv::
         ss << "Average total time: " << aggregate_total_time_/iterations_ << " ms" << std::endl;
         ss << "Left image feature match rate: " << static_cast<double>(frame->match_features.size())/left_key_pts_.size() << std::endl;
         RCLCPP_INFO(node_->get_logger(), ss.str().c_str());
+
+        sensor_msgs::msg::PointCloud2 point_cloud;
+        point_cloud.header.frame_id = stereo_camera_model.left().tfFrame();
+        point_cloud.header.stamp = stereo_camera_model.left().stamp();
+        point_cloud.height = 1;
+        point_cloud.width = frame->match_xyz.size();
+        point_cloud.is_bigendian = false;
+        point_cloud.point_step = 12; // 4x3
+        point_cloud.is_dense = true;
+
+        // Create the point fields for doubles
+        auto point_field = sensor_msgs::msg::PointField();
+        point_field.name = "x";
+        point_field.offset = 0;
+        point_field.datatype = point_field.FLOAT32;
+        point_field.count = 1;
+        point_cloud.fields.push_back(point_field);
+        point_field.name = "y";
+        point_field.offset = 4;
+        point_cloud.fields.push_back(point_field);
+        point_field.name = "z";
+        point_field.offset = 8;
+        point_cloud.fields.push_back(point_field);
+        for(const auto& point : frame->match_xyz){
+            // Each point is a float 32 (ie 4 x unit8) x 3
+            for(int i=0;i<12;i++){
+                if(i/4<1){
+                    auto x = static_cast<float>(point.x);
+                    char* byteArray = reinterpret_cast<char*>(&x);
+                    point_cloud.data.push_back(byteArray[i%4]);
+                } else if(i/4<2){
+                    auto y = static_cast<float>(point.y);
+                    char* byteArray = reinterpret_cast<char*>(&y);
+                    point_cloud.data.push_back(byteArray[i%4]);
+                } else {
+                    auto z = static_cast<float>(point.z);
+                    char* byteArray = reinterpret_cast<char*>(&z);
+                    point_cloud.data.push_back(byteArray[i%4]);
+                }
+            }
+        }
+        point_cloud.row_step = point_cloud.data.size();
+        point_cloud_pub_->publish(point_cloud);
     }
 
     return frame;
