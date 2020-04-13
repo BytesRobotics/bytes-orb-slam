@@ -16,7 +16,7 @@ void System::Track(const cv::Mat &left_img, const cv::Mat &right_image, image_ge
 
     // Get the necessary transformations of the robot static body for computing everything for the new frame
     // Tbc
-    geometry_msgs::msg::TransformStamped base_to_camera_msg = tf_buffer_.lookupTransform(stereo_camera_model.left().tfFrame(), wheel_odom->child_frame_id, tf2::TimePoint(std::chrono::seconds(0)));
+    geometry_msgs::msg::TransformStamped base_to_camera_msg = tf_buffer_.lookupTransform(wheel_odom->child_frame_id, stereo_camera_model.left().tfFrame(), tf2::TimePoint(std::chrono::seconds(0)));
     tf2::Stamped<tf2::Transform> base_to_camera;
     tf2::fromMsg(base_to_camera_msg, base_to_camera);
 
@@ -32,6 +32,7 @@ void System::Track(const cv::Mat &left_img, const cv::Mat &right_image, image_ge
     new_frame->imu_orientation = tf2::Quaternion(imu_data->orientation.x, imu_data->orientation.y, imu_data->orientation.z, imu_data->orientation.w)*imu_to_camera.getRotation();
 
     new_frame->wheel_odom_to_camera = tf2::Transform();
+    new_frame->wheel_odom_to_camera.setOrigin(tf2::Vector3(wheel_odom->pose.pose.position.x, wheel_odom->pose.pose.position.y, wheel_odom->pose.pose.position.z));
     new_frame->wheel_odom_to_camera.setOrigin(tf2::Vector3(wheel_odom->pose.pose.position.x, wheel_odom->pose.pose.position.y, wheel_odom->pose.pose.position.z));
     new_frame->wheel_odom_to_camera.setRotation(tf2::Quaternion(wheel_odom->pose.pose.orientation.x, wheel_odom->pose.pose.orientation.y, wheel_odom->pose.pose.orientation.z, wheel_odom->pose.pose.orientation.w));
     // Toc = Tob*Tbc
@@ -55,7 +56,7 @@ void System::Track(const cv::Mat &left_img, const cv::Mat &right_image, image_ge
         cv::resize(bgr_left_reprojected_pts, bgr_left_reprojected_pts, cv::Size(), 2, 2, cv::INTER_CUBIC);
         cv::imshow("reprojected points", bgr_left_reprojected_pts);
         cv::waitKey(1);
-    } else {
-        last_frame_ = new_frame;
     }
+
+    last_frame_ = new_frame;
 }

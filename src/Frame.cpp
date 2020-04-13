@@ -71,8 +71,7 @@ void Frame::transform_keypoints(const std::shared_ptr<Frame> &old_frame, std::ve
     for(const auto& point : old_frame->match_xyz){
 //        tf2::Quaternion d_orientation =  old_frame->imu_orientation*imu_orientation.inverse(); // Get the change in the rotation between the frames
 //        tf2::Transform d_transform = old_frame->wheel_odom_to_camera.inverse()*wheel_odom_to_camera; // Change in rotation/translation according to wheel odom
-//        std::cout << d_transform.getOrigin().x() << " " << d_transform.getOrigin().y() << " " << d_transform.getOrigin().z() << " " <<std::endl;
-        auto new_point = (old_frame->wheel_odom_to_camera.inverse() * wheel_odom_to_camera) * tf2::tf2Vector4(point.x, point.y, point.z, 1);
+        auto new_point = (wheel_odom_to_camera.inverse() * old_frame->wheel_odom_to_camera) * tf2::tf2Vector4(point.x, point.y, point.z, 1);
         transformed_points.emplace_back(new_point.x(), new_point.y(), new_point.z());
     }
 }
