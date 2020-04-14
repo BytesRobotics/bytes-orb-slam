@@ -89,7 +89,7 @@ public:
      */
     ORBExtractor(std::shared_ptr<rclcpp::Node> node, int nfeatures=1000, float scaleFactor=1.5f, int nlevels=5, int edgeThreshold=19, int firstLevel=0,
                     int WTA_K=2, cv::ORB::ScoreType scoreType=cv::ORB::FAST_SCORE, int patchSize=19, int fastThreshold=30, bool debug=false,
-                    float tolerance=1, int matchThreshold=30);
+                    float tolerance=0, int matchThreshold=30);
 
 /**
      * This is the main function to be called for converting two grayscale images into

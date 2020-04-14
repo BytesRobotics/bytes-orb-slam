@@ -36,6 +36,7 @@
 #include <tf2/time.h>
 
 #include "ORBExtractor.h"
+#include "Tracking.h"
 
 class System {
 public:
@@ -46,9 +47,7 @@ public:
           const std::shared_ptr<nav_msgs::msg::Odometry>& wheel_odom);
 private:
     ORBExtractor orb_extractor_;
-
-    /// Last Frame for the motion model
-    std::shared_ptr<Frame> last_frame_;
+    Tracker tracker_;
 
     /// This will be for using the odom as the motion model
     tf2::BufferCore tf_buffer_;

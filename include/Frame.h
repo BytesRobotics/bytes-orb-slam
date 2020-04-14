@@ -15,6 +15,7 @@
 #include <tf2/LinearMath/Transform.h>
 #include <tf2/convert.h>
 #include <tf2/transform_datatypes.h>
+#include <image_geometry/stereo_camera_model.h>
 
 //ROS
 #include <sensor_msgs/msg/point_cloud2.hpp>
@@ -39,7 +40,7 @@ public:
     void draw_frame(cv::Mat& img_left, cv::Mat& img_right);
 
     /// Transforms keypoints in R3 from the Frame in this object to the frame that is passed in
-    void transform_keypoints(const std::shared_ptr<Frame> &old_frame, std::vector<cv::Point3d>& transformed_points);
+    void transform_keypoints(const std::shared_ptr<Frame> &old_frame, std::vector<cv::Point3d> &transformed_points);
 
     /// Include data to model the location of the frame relative to other sensor information including IMU, altimeter, and wheel odom
     /// this data can be used for storing keyframes and estimating the motion of the camera. Everything is implemented on rclcpp tf2

@@ -40,7 +40,7 @@ ORBExtractor::ORBExtractor(std::shared_ptr<rclcpp::Node>  node, int nfeatures, f
     node_->declare_parameter(node_->get_sub_namespace() + ".matchThreshold", matchThreshold); //Stereo threshold for image matching
     match_threshold_ = matchThreshold;
 
-    point_cloud_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("orb/pc", 1);
+    point_cloud_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("pc", 1);
 
     orb_ = cv::ORB::create(n_features_, scale_factor_, n_levels_, edge_threshold_, first_level_, WTA_K_, score_type_, patch_size_, fast_threshold_);
 
@@ -213,6 +213,10 @@ void ORBExtractor::compute_xyz_(const std::shared_ptr<Frame>& frame, image_geome
     frame->match_xyz.resize(frame->match_features.size());
     for(unsigned int i=0; i<frame->match_features.size(); i++){
         float disparity = frame->match_features[i][0].pt.x - frame->match_features[i][1].pt.x;
-        stereo_camera_model.projectDisparityTo3d(frame->match_features[i][0].pt, disparity, frame->match_xyz[i]);
+        if(disparity != 0) {
+            stereo_camera_model.projectDisparityTo3d(frame->match_features[i][0].pt, disparity, frame->match_xyz[i]);
+            // Need to add baseline to the x coordinate since 3D points are in reference to the right camera not the left camera
+            frame->match_xyz[i].x += stereo_camera_model.baseline();
+        }
     }
 }
