@@ -8,6 +8,7 @@
 // Standard C++
 #include <chrono>
 #include <iostream>
+#include <math.h>
 
 // ROS
 #include <rclcpp/rclcpp.hpp>
@@ -64,24 +65,23 @@ private:
     rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_event_sub_;
 
     /// The 3D point matches between the two most recent frames
-    std::vector<std::array<cv::Point3d, 2>> matches_;
+    std::vector<std::array<cv::Point3d, 2>> matches_; // 3D points that match
+    // For visualizing and computing errors in the odometry source
+    std::vector<int> transformed_point_mapping_;
+    cv::RNG rng_; // Used for generating random distributions for search
+
 
     /// Dyanmic configuration variable
     int frame_rigidity_, min_coord_dist_, min_feature_dist_, tracking_period_;
     bool debug_;
 
-    /// Efficient algorithm for finding feature correspondences between frames
-    void find_matches_btw_frames();
-
-    // Holds the last frame that was passed into the track to help with optical flow
+    /// Holds the last frame that was passed into the track to help with optical flow
     std::shared_ptr<Frame> last_frame_;
 
     /// Timing variables for algorithm analysis
     std::chrono::steady_clock::time_point match_start_, match_stop_;
     int iterations_;
     double aggregate_total_time_;
-    std::vector<int> transformed_point_mapping_; // For visualizing errors
-
 };
 
 #endif //BR_SLAM_TRACKING_H

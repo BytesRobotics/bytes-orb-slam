@@ -59,3 +59,12 @@ void System::Track(const cv::Mat &left_img, const cv::Mat &right_image, image_ge
     /// Add that frame to a map and perform tracking
     tracker_.track_with_new_frame(new_frame, stereo_camera_model, left_img);
 }
+
+void System::Track(const cv::Mat &left_img, const cv::Mat &right_image, image_geometry::StereoCameraModel &stereo_camera_model) {
+    // Create a new frame
+    std::shared_ptr<Frame> new_frame = orb_extractor_.extract(left_img, right_image, stereo_camera_model);
+    new_frame->wheel_odom_to_camera = tf2::Transform(tf2::Quaternion(0,0,0,1)); // Fake odom
+
+    /// Add that frame to a map and perform tracking
+    tracker_.track_with_new_frame(new_frame, stereo_camera_model, left_img);
+}

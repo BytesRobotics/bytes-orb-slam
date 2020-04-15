@@ -45,9 +45,12 @@ public:
     void Track(const cv::Mat &left_img, const cv::Mat &right_image, image_geometry::StereoCameraModel &stereo_camera_model,
           const std::shared_ptr<sensor_msgs::msg::Imu>& imu_data, const std::shared_ptr<geometry_msgs::msg::PoseWithCovarianceStamped>& altimeter,
           const std::shared_ptr<nav_msgs::msg::Odometry>& wheel_odom);
+    // Overloaded track method for when only using visual input sources
+    void Track(const cv::Mat &left_img, const cv::Mat &right_image, image_geometry::StereoCameraModel &stereo_camera_model);
 private:
     ORBExtractor orb_extractor_;
     Tracker tracker_;
+
 
     /// This will be for using the odom as the motion model
     tf2::BufferCore tf_buffer_;
