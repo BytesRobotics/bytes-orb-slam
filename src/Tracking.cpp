@@ -53,7 +53,7 @@ Tracker::Tracker(std::shared_ptr<rclcpp::Node> node, int frame_rigidity, bool de
 void Tracker::track_with_new_frame(const std::shared_ptr<Frame>& new_frame, image_geometry::StereoCameraModel &stereo_camera_model, const cv::Mat &new_img) {
         /** STEP 1: First we need to find feature correspondences and compute an error vector that
          * can be used to update the short term to have a better estimate of current motion.
-         * The first function takes in the new frame and comapres it to the last to figure out which point are the same.
+         * The first function takes in the new frame and compares it to the last key frame to find similar points.
          * In step 2 that information is used to create an optical flow like prediction about the motion of the robot.
          * That prediction is used to update the new frame's position before.
          */
@@ -92,34 +92,38 @@ void Tracker::track_with_new_frame(const std::shared_ptr<Frame>& new_frame, imag
             // error in the system
 
             if (debug_) {flow_optimization_start_ = std::chrono::steady_clock::now();}
-            tf2::Transform best_guess = new_frame->wheel_odom_to_camera.inverse() * last_frame_->wheel_odom_to_camera;
+            // Transform between the camera's POV between frames
+            tf2::Transform c1_to_c2_best_guess;
+            c1_to_c2_best_guess.setOrigin(tf2::Vector3(new_frame->wheel_odom_to_camera.getOrigin().x(),new_frame->wheel_odom_to_camera.getOrigin().y(), new_frame->wheel_odom_to_camera.getOrigin().z()));
+            c1_to_c2_best_guess.setRotation(tf2::Quaternion(new_frame->wheel_odom_to_camera.getRotation().x(), new_frame->wheel_odom_to_camera.getRotation().y(), new_frame->wheel_odom_to_camera.getRotation().z(), new_frame->wheel_odom_to_camera.getRotation().w()));
             std::vector<cv::Point3d> masked_transformed_points;
-            new_frame->transform_keypoints(last_frame_, best_guess, transformed_point_mapping_,masked_transformed_points);
+            new_frame->transform_keypoints(last_frame_, c1_to_c2_best_guess, transformed_point_mapping_, masked_transformed_points);
             double min_error = compute_error(masked_transformed_points);
             double starting_error = min_error; // For debugging
             for(int iteration=0;iteration<10;iteration++){
-                tf2::Transform mean = best_guess;
+                tf2::Transform mean = c1_to_c2_best_guess;
                 for(int i=0;i<10;i++){
-                    tf2::Transform new_guess = new_frame->wheel_odom_to_camera.inverse() * last_frame_->wheel_odom_to_camera;
+                    tf2::Transform new_guess;
                     int scalar = (iteration+1)*(iteration+1);
-                    new_guess.getOrigin().setX(mean.getOrigin().getX()+rng_.gaussian(0.1/scalar));
-                    new_guess.getOrigin().setY(mean.getOrigin().getY()+rng_.gaussian(0.1/scalar));
-                    new_guess.getOrigin().setZ(mean.getOrigin().getZ()+rng_.gaussian(0.1/scalar));
-                    new_guess.getRotation().setX(mean.getRotation().getX()+rng_.gaussian(0.1/scalar));
-                    new_guess.getRotation().setY(mean.getRotation().getY()+rng_.gaussian(0.1/scalar));
-                    new_guess.getRotation().setZ(mean.getRotation().getZ()+rng_.gaussian(0.1/scalar));
-                    new_guess.getRotation().setW(sqrt(1-new_guess.getRotation().getX()*new_guess.getRotation().getX()-
-                                                         new_guess.getRotation().getY()*new_guess.getRotation().getY()-
-                                                         new_guess.getRotation().getZ()*new_guess.getRotation().getZ()));
+                    new_guess.setOrigin(tf2::Vector3(mean.getOrigin().getX()+rng_.gaussian(0.1/scalar),
+                                                           mean.getOrigin().getY()+rng_.gaussian(0.1/scalar),
+                                                           mean.getOrigin().getZ()+rng_.gaussian(0.1/scalar)));
+                    new_guess.setRotation(tf2::Quaternion(tf2::Vector3(mean.getRotation().getAxis().x()+rng_.gaussian(0.1/scalar),
+                                                                       mean.getRotation().getAxis().y()+rng_.gaussian(0.1/scalar),
+                                                                       mean.getRotation().getAxis().z()+rng_.gaussian(0.1/scalar)),
+                                                                    mean.getRotation().getAngle()+rng_.gaussian(0.1/scalar)));
                     masked_transformed_points.clear();
-                    new_frame->transform_keypoints(last_frame_, new_guess, transformed_point_mapping_,masked_transformed_points);
+                    new_frame->transform_keypoints(last_frame_,  new_guess, transformed_point_mapping_,masked_transformed_points);
                     double error = compute_error(masked_transformed_points);
                     if(error < min_error){
-                        best_guess = new_guess;
+                        c1_to_c2_best_guess = new_guess;
                         min_error = error;
                     }
                 }
             }
+//            double old_x = new_frame->wheel_odom_to_camera.getOrigin().x();
+            new_frame->wheel_odom_to_camera = c1_to_c2_best_guess;
+//            std::cout << old_x - new_frame->wheel_odom_to_camera.getOrigin().x() << std::endl;
             double stopping_error = min_error;
             if (debug_) {flow_optimization_stop_ = std::chrono::steady_clock::now();}
 

@@ -81,7 +81,7 @@ void Frame::transform_keypoints(const std::shared_ptr<Frame> &old_frame, std::ve
 void Frame::transform_keypoints(const std::shared_ptr<Frame> &old_frame, const tf2::Transform& transform, const std::vector<int>& mask, std::vector<cv::Point3d> &transformed_points) {
     transformed_points.reserve(old_frame->match_xyz.size());
     for(int i : mask){
-        auto new_point = transform * tf2::tf2Vector4(old_frame->match_xyz[i].x, old_frame->match_xyz[i].y, old_frame->match_xyz[i].z, 1);
+        auto new_point = (transform.inverse() * old_frame->wheel_odom_to_camera) * tf2::tf2Vector4(old_frame->match_xyz[i].x, old_frame->match_xyz[i].y, old_frame->match_xyz[i].z, 1);
         transformed_points.emplace_back(new_point.x(), new_point.y(), new_point.z());
     }
 }

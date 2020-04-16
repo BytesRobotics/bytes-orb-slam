@@ -36,9 +36,9 @@ void System::Track(const cv::Mat &left_img, const cv::Mat &right_image, image_ge
     std::shared_ptr<Frame> new_frame = orb_extractor_.extract(left_img, right_image, stereo_camera_model);
 
     // Ric
-    new_frame->imu_orientation =
-            tf2::Quaternion(imu_data->orientation.x, imu_data->orientation.y, imu_data->orientation.z,
-                            imu_data->orientation.w) * imu_to_camera.getRotation();
+//    new_frame->imu_orientation =
+//            tf2::Quaternion(imu_data->orientation.x, imu_data->orientation.y, imu_data->orientation.z,
+//                            imu_data->orientation.w) * imu_to_camera.getRotation();
 
     new_frame->wheel_odom_to_camera = tf2::Transform();
     new_frame->wheel_odom_to_camera.setOrigin(
@@ -54,7 +54,7 @@ void System::Track(const cv::Mat &left_img, const cv::Mat &right_image, image_ge
     new_frame->wheel_odom_to_camera = new_frame->wheel_odom_to_camera *
                                       base_to_camera; // Turn the wheel from odom->base_link to odom to left_camera_optical_link
 
-    new_frame->altimeter_value = tf2::Vector3(0, 0, altimeter->pose.pose.position.z);
+//    new_frame->altimeter_value = tf2::Vector3(0, 0, altimeter->pose.pose.position.z);
 
     /// Add that frame to a map and perform tracking
     tracker_.track_with_new_frame(new_frame, stereo_camera_model, left_img);
