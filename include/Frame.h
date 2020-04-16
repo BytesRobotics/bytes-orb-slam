@@ -41,7 +41,7 @@ public:
 
     /// Transforms keypoints in R3 from the Frame in this object to the frame that is passed in
     void transform_keypoints(const std::shared_ptr<Frame> &old_frame, std::vector<cv::Point3d> &transformed_points);
-    void transform_keypoints(const std::shared_ptr<Frame> &old_frame, const tf2::Transform& transform, std::vector<cv::Point3d> &transformed_points);
+    void transform_keypoints(const std::shared_ptr<Frame> &old_frame, const tf2::Transform& transform, const std::vector<int>& mask, std::vector<cv::Point3d> &transformed_points);
 
     /// Include data to model the location of the frame relative to other sensor information including IMU, altimeter, and wheel odom
     /// this data can be used for storing keyframes and estimating the motion of the camera. Everything is implemented on rclcpp tf2

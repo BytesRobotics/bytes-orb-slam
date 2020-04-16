@@ -55,6 +55,11 @@ public:
     /// This is the main function for debugging the short run optimizer and frame tracking
     void show_optical_flow(const cv::Mat &new_img, std::vector<cv::Point3d>& transformed_points, image_geometry::StereoCameraModel &stereo_camera_model);
 
+    void find_matching_points(const std::shared_ptr<Frame>& new_frame, image_geometry::StereoCameraModel &stereo_camera_model,
+            std::vector<cv::Point3d>& transformed_points);
+
+    double compute_error(std::vector<cv::Point3d>& transformed_points);
+
 private:
 
     /// Hold onto the main node pointer for logging and parameters
@@ -79,7 +84,7 @@ private:
     std::shared_ptr<Frame> last_frame_;
 
     /// Timing variables for algorithm analysis
-    std::chrono::steady_clock::time_point match_start_, match_stop_;
+    std::chrono::steady_clock::time_point match_start_, match_stop_, flow_optimization_start_, flow_optimization_stop_;
     int iterations_;
     double aggregate_total_time_;
 };

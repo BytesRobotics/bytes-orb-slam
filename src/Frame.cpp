@@ -77,10 +77,11 @@ void Frame::transform_keypoints(const std::shared_ptr<Frame> &old_frame, std::ve
 
 }
 
-void Frame::transform_keypoints(const std::shared_ptr<Frame> &old_frame, const tf2::Transform& transform, std::vector<cv::Point3d> &transformed_points) {
+// This version only transforms masked points and uses a transform that is passed in rather than borrowed from the frames
+void Frame::transform_keypoints(const std::shared_ptr<Frame> &old_frame, const tf2::Transform& transform, const std::vector<int>& mask, std::vector<cv::Point3d> &transformed_points) {
     transformed_points.reserve(old_frame->match_xyz.size());
-    for(const auto& point : old_frame->match_xyz){
-        auto new_point = transform * tf2::tf2Vector4(point.x, point.y, point.z, 1);
+    for(int i : mask){
+        auto new_point = transform * tf2::tf2Vector4(old_frame->match_xyz[i].x, old_frame->match_xyz[i].y, old_frame->match_xyz[i].z, 1);
         transformed_points.emplace_back(new_point.x(), new_point.y(), new_point.z());
     }
 }
