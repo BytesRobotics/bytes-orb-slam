@@ -55,8 +55,15 @@ public:
     /// This is the main function for debugging the short run optimizer and frame tracking
     void show_optical_flow(const cv::Mat &new_img, std::vector<cv::Point3d>& transformed_points, image_geometry::StereoCameraModel &stereo_camera_model);
 
-    void find_matching_points(const std::shared_ptr<Frame>& new_frame, image_geometry::StereoCameraModel &stereo_camera_model,
-            std::vector<cv::Point3d>& transformed_points);
+    /**
+     * This functions finds points that are similar between last_frame and new frame
+     * @param new_frame the frame to compare last_frame_
+     * @param stereo_camera_model
+     * @param transformed_points
+     */
+    std::shared_ptr<std::vector<std::array<cv::Point3d, 2>>> find_matching_points(
+            const std::shared_ptr<Frame>& new_frame, const std::shared_ptr<Frame> &last_frame,
+            image_geometry::StereoCameraModel &stereo_camera_model, std::vector<cv::Point3d>& transformed_points);
 
     double compute_error(std::vector<cv::Point3d>& transformed_points);
 
@@ -70,7 +77,7 @@ private:
     rclcpp::Subscription<rcl_interfaces::msg::ParameterEvent>::SharedPtr parameter_event_sub_;
 
     /// The 3D point matches between the two most recent frames
-    std::vector<std::array<cv::Point3d, 2>> matches_; // 3D points that match
+    std::shared_ptr<std::vector<std::array<cv::Point3d, 2>>> matches_; // 3D points that match
     // For visualizing and computing errors in the odometry source
     std::vector<int> transformed_point_mapping_;
     cv::RNG rng_; // Used for generating random distributions for search
@@ -83,8 +90,11 @@ private:
     /// Holds the last frame that was passed into the track to help with optical flow
     std::shared_ptr<Frame> last_frame_;
 
+    /// The map
+    Map map_;
+
     /// Timing variables for algorithm analysis
-    std::chrono::steady_clock::time_point match_start_, match_stop_, flow_optimization_start_, flow_optimization_stop_;
+    std::chrono::steady_clock::time_point match_start_, match_stop_, flow_optimization_start_, flow_optimization_stop_, map_start_, map_stop_;
     int iterations_;
     double aggregate_total_time_;
 };
