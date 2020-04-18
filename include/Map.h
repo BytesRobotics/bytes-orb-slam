@@ -48,6 +48,8 @@ public:
 
     void add_keyframe(const std::shared_ptr<Frame>& frame, image_geometry::StereoCameraModel &stereo_camera_model);
 
+    int get_num_keyframes();
+
 private:
 
     /// Hold onto the main node pointer for logging and parameters

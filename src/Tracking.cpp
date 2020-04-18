@@ -135,7 +135,6 @@ void Tracker::track_with_new_frame(const std::shared_ptr<Frame>& new_frame, imag
             std::shared_ptr<Frame> last_keyframe_frame = map_.get_most_recent_keyframe();
             std::vector<cv::Point3d> keyframe_transformed_points;
             keyframe_transformed_points.reserve(last_keyframe_frame->match_xyz.size());
-            new_frame->transform_keypoints(last_keyframe_frame, keyframe_transformed_points);
             std::shared_ptr<std::vector<std::array<cv::Point3d, 2>>> keyframe_matches = find_matching_points(new_frame, last_keyframe_frame, stereo_camera_model, keyframe_transformed_points);
 
             if(keyframe_matches->size() < static_cast<unsigned int>(frame_rigidity_)){
@@ -164,6 +163,7 @@ void Tracker::track_with_new_frame(const std::shared_ptr<Frame>& new_frame, imag
                 ss << "Tracker match Rate: " << matches_->size() / static_cast<double>(transformed_points.size()) << std::endl;
                 ss << "Odom error reduction: " << starting_error - stopping_error << std::endl;
                 ss << "Number of keyframe matches: " << keyframe_matches->size() << std::endl;
+                ss << "Number of keyframes: " << map_.get_num_keyframes() << std::endl;
                 RCLCPP_INFO(node_->get_logger(), ss.str().c_str());
             }
         }
@@ -206,7 +206,7 @@ std::shared_ptr<std::vector<std::array<cv::Point3d, 2>>> Tracker::find_matching_
         int match_i = -1, match_j = -1;
         for (unsigned j = 0; j < new_frame->match_descriptors.size(); j++) {
             // Get the squared taxi-cab (l1) distance between the reprojected point and each point in the new frame
-            int coord_dist = static_cast<int>(abs(new_frame->match_features[j][0].pt.x - reprojected_point.x) +
+            int coord_dist = static_cast<int>(abs(new_frame->match_features.at(j)[0].pt.x - reprojected_point.x) +
                                               abs(new_frame->match_features[j][0].pt.y - reprojected_point.y));
             if (coord_dist < min_coord_dist_) {
                 // The point must be close to the reprojected point

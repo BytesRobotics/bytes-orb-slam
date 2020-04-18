@@ -19,13 +19,13 @@ void System::Track(const cv::Mat &left_img, const cv::Mat &right_image, image_ge
     /// Get the necessary transformations of the robot static body for computing everything for the new frame
     // Tbc
     geometry_msgs::msg::TransformStamped base_to_camera_msg = tf_buffer_.lookupTransform(wheel_odom->child_frame_id,
-            stereo_camera_model.left().tfFrame(), tf2::TimePoint(std::chrono::seconds(0)));
+            stereo_camera_model.left().tfFrame(), tf2::TimePointZero);
     tf2::Stamped<tf2::Transform> base_to_camera;
     tf2::fromMsg(base_to_camera_msg, base_to_camera);
 
     // Data to create Ric
     geometry_msgs::msg::TransformStamped imu_to_camera_msg = tf_buffer_.lookupTransform(
-            stereo_camera_model.left().tfFrame(), imu_data->header.frame_id, tf2::TimePoint(std::chrono::seconds(0)));
+            stereo_camera_model.left().tfFrame(), imu_data->header.frame_id, tf2::TimePointZero);
     tf2::Stamped<tf2::Transform> imu_to_camera;
     tf2::fromMsg(imu_to_camera_msg, imu_to_camera);
 

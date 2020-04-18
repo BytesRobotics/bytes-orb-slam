@@ -13,10 +13,10 @@ tf_broadcaster_(node_){
     publish_odom_ = true;
     node_->declare_parameter(node_->get_sub_namespace() + ".broadcastTf", true);
     broadcast_tf_ = true;
-    node_->declare_parameter(node_->get_sub_namespace() + ".odomFrameId", "map");
-    odom_frame_id_ = "map";
-    node_->declare_parameter(node_->get_sub_namespace() + ".childFrameId", "odom");
-    odom_child_frame_id = "odom";
+    node_->declare_parameter(node_->get_sub_namespace() + ".odomFrameId", "odom");
+    odom_frame_id_ = "odom";
+    node_->declare_parameter(node_->get_sub_namespace() + ".childFrameId", "base_link");
+    odom_child_frame_id = "base_link";
 
     // Update parameters dynamically
     parameters_client_ = std::make_shared<rclcpp::AsyncParametersClient>(node_);
@@ -50,6 +50,9 @@ tf_broadcaster_(node_){
 
     /// Point cloud for modeling the features on the map
     point_cloud_pub_ = node_->create_publisher<sensor_msgs::msg::PointCloud2>("map_points", 1);
+
+    /// Standard odom topic
+    odom_pub_ = node_->create_publisher<nav_msgs::msg::Odometry>("odom", 10);
 
     /// Ready the map to recieve frames, since it is fixed size we shouldnt need to
     /// perform any more allocation beyond this point
@@ -87,11 +90,10 @@ void Map::publish_tf_odom_(image_geometry::StereoCameraModel &stereo_camera_mode
         tf2::Stamped<tf2::Transform> base_to_camera;
         tf2::fromMsg(base_to_camera_msg, base_to_camera);
 
-        tf2::Stamped<tf2::Transform> transform_stamped(map_[map_.size()-1]->wheel_odom_to_camera*base_to_camera.inverse(),
-                time, odom_frame_id_);
+        tf2::Stamped<tf2::Transform> transform_stamped(map_[map_.size()-1]->wheel_odom_to_camera*base_to_camera.inverse(), time, odom_frame_id_);
         geometry_msgs::msg::TransformStamped transform_stamped_msg = tf2::toMsg(transform_stamped);
         transform_stamped_msg.child_frame_id = odom_child_frame_id;
-        tf_broadcaster_.sendTransform(tf2::toMsg(transform_stamped));
+        tf_broadcaster_.sendTransform(transform_stamped_msg);
     }
 }
 
@@ -100,7 +102,7 @@ void Map::publish_odometry_(image_geometry::StereoCameraModel &stereo_camera_mod
         geometry_msgs::msg::Pose pose_msg;
         tf2::toMsg(map_[map_.size()-1]->wheel_odom_to_camera, pose_msg);
 
-        if(last_pub_time_ == 0){
+        if(last_pub_time_ != 0){
             nav_msgs::msg::Odometry odom_msg;
             odom_msg.child_frame_id = stereo_camera_model.left().tfFrame();
             odom_msg.header.stamp = tf2_ros::toMsg(time);
@@ -170,4 +172,8 @@ void Map::publish_pointcloud() {
     }
     point_cloud.row_step = point_cloud.data.size();
     point_cloud_pub_->publish(point_cloud);
+}
+
+int Map::get_num_keyframes() {
+    return map_.size();
 }
